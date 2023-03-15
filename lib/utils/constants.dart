@@ -1,0 +1,1 @@
+/// Константыclass AppContsts {  static const baseUrl = 'https://api.hitba.io/main/';  static const fileUrl = 'https://api.hitba.io/';  static const avaUrl = 'https://api.hitba.io/fs/static/';}

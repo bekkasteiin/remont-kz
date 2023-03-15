@@ -1,0 +1,1 @@
+import 'package:equatable/equatable.dart';/// общий класс обработки состояние с уникальным index-ом для постоянного этита в bloc/cubitabstract class CoreIndexedState extends Equatable {  final index = DateTime.now().microsecondsSinceEpoch;  @override  List<Object> get props => [index];}
