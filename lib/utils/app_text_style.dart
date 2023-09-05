@@ -173,6 +173,14 @@ class AppTextStyles {
     //fontFamily: FontFamily.openSans,
   );
 
+  static final body14W500 = TextStyle(
+    fontSize: 14.sp,
+    fontWeight: FontWeight.w500,
+    height:  16 / 13,
+    color: AppColors.blackGreyText,
+    //fontFamily: FontFamily.openSans,
+  );
+
   static final subtitleSemibold = TextStyle(
     fontSize: 13.sp,
     fontWeight: FontWeight.w600,

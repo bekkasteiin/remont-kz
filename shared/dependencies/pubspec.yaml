@@ -50,8 +50,7 @@ dependencies:
   scroll_to_index: ^3.0.1
   share_plus: ^4.0.4
   shared_preferences: ^2.0.7
-  store_redirect: ^2.0.1
-  url_launcher: ^6.0.10
+#  url_launcher: ^6.0.10
   flutter_svg: ^1.1.4
   shimmer: ^2.0.0
 

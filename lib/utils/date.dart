@@ -42,7 +42,7 @@ String formatDateIso8601(DateTime dateTime) {
 }
 
 DateTime dateFromIso8601(String source) {
-  return DateFormat('yyyy-MM-dd').parse(source);
+  return DateFormat('yyyy-MM-dd hh:mm').parse(source);
 }
 
 bool equalDates(DateTime date1, DateTime date2) {
