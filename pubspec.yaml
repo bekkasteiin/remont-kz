@@ -33,10 +33,10 @@ dependencies:
   table_calendar: ^3.0.8
   retrofit: ^3.0.1+1
   retrofit_generator: ^4.0.3+1
-  flutter_launcher_icons: ^0.9.3
   build_runner: ^2.2.0
   json_serializable: ^6.3.1
   flutter_native_splash: ^2.2.7
+  full_screen_image: ^2.0.0
   cached_network_image: ^3.2.1
   lottie: ^1.4.2
   bottom_nav_layout: ^3.0.9
@@ -56,19 +56,20 @@ flutter_native_splash:
   ios: true
   web: true
 dev_dependencies:
+  flutter_launcher_icons: ^0.11.0
   flutter_test:
     sdk: flutter
 
   flutter_lints: ^2.0.0
 
 flutter_launcher_icons:
-  android: "icon"
+  android: "launcher_icon"
   image_path: "assets/icons/icon.png"
-  background_color: "#009FDC"
+  ios: true
 
 
 flutter_icons:
-  image_path: "assets/icons/icon.png"
+  image_path: "assets/icons/logo.png"
   android: "launcher_icon"
   ios: true
 flutter:

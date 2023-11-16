@@ -1,1 +1,0 @@
-abstract class AuthRepo {  Future<void> sendSms(String phone);  Future<bool> checkSms(String phone, int code, String password);}

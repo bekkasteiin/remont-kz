@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 
+
 List<ChatList> chatListFromJson(String str) => List<ChatList>.from(json.decode(str).map((x) => ChatList.fromJson(x)));
 
 String chatListToJson(List<ChatList> data) => json.encode(List<dynamic>.from(data.map((x) => x.toJson())));
@@ -14,7 +15,7 @@ class ChatList {
   bool? fromMe;
   bool? isRead;
   int? countOfNewMessages;
-  DateTime? time;
+  String? time;
   String? userFullName;
   String? photoUrl;
   String? username;
@@ -43,7 +44,7 @@ class ChatList {
     fromMe: json["fromMe"],
     isRead: json["isRead"],
     countOfNewMessages: json["countOfNewMessages"],
-    time: DateTime.parse(json["time"]),
+    time:json["time"],
     userFullName: json["userFullName"],
     username: json["username"],
     photoUrl: json["photoUrl"],
@@ -58,7 +59,7 @@ class ChatList {
     "fromMe": fromMe,
     "isRead": isRead,
     "countOfNewMessages": countOfNewMessages,
-    "time": time?.toIso8601String(),
+    "time": time,
     "userFullName": userFullName,
     "username": username,
     "photoUrl": photoUrl,

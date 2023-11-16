@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dependencies/dependencies.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -22,6 +23,7 @@ import 'package:remont_kz/model/publication/publication_review.dart';
 import 'package:remont_kz/model/publication/upload_publication_model.dart';
 import 'package:remont_kz/model/task/create_task_model.dart';
 import 'package:remont_kz/model/task/task_model.dart';
+import 'package:remont_kz/model/task/update_task_model.dart';
 import 'package:remont_kz/utils/app_colors.dart';
 import 'package:http/http.dart' as http;
 
@@ -89,8 +91,7 @@ class RestServices{
     baseUrl: "https://remontor.kz/authentication",
     connectTimeout: tenSeconds,
     receiveTimeout: fiveSeconds,
-    headers: {'X-Requested-With': 'XMLHttpRequest',
-      'Content-Type': 'application/json'
+    headers: {'X-Requested-With': 'XMLHttpRequest'
     },
   );
 
@@ -139,14 +140,13 @@ class RestServices{
         return request.statusCode;
       }
       return request.statusCode;
-
-
     }on DioError catch (e){
       if(e.response?.data!=null){
+
         final value = ErrorMessage.fromJson(e.response?.data);
+        print(e.response?.data);
         showToastsError(value.message ?? '');
       }
-
       return dioError(e);
     }
   }
@@ -199,14 +199,74 @@ class RestServices{
     }
   }
 
-  getIsOpenRequest({required String userName})async{
+  getProfileSession({required String userName})async{
     try{
       final tokenStore = getIt.get<TokenStoreService>();
-      dioService.options.headers = {"Authorization" : 'Bearer ${tokenStore.accessToken}'};
-      response = await dioService.get('/v1/users/is-open-request?username=$userName',
+      dioAuth.options.headers = {"Authorization" : 'Bearer ${tokenStore.accessToken}'};
+      response = await dioAuth.get('/users/last-session/$userName',
+      );
+
+      if(response.statusCode ==200){
+        var jsonData = json.encode(response.data);
+        final jsonMap = json.decode(jsonData);
+
+
+        final dateTimeString = jsonMap['dateTime'];
+        DateTime parsedDateTime = DateFormat("yyyy-MM-dd'T'HH:mm:ssZ").parse(dateTimeString);
+        var dateOnline = DateFormat('HH:mm').format(parsedDateTime);
+
+        return dateOnline;
+      }
+
+    }on DioError catch (e) {
+      print(response.statusCode);
+      return dioError(e);
+    }
+  }
+
+  getIsOpenRequest({required int taskID})async{
+    try{
+      final response = await dio.get('tasks/is-active?taskId=$taskID',
       );
       if(response.statusCode ==200){
         return response.data;
+
+      }else{
+        false;
+      }
+
+    }on DioError catch (e) {
+      return dioError(e);
+    }
+  }
+
+  postOpenClosedRequest({required int taskID})async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      dio.options.headers = {"Authorization" : 'Bearer ${tokenStore.accessToken}'};
+      response = await dio.patch('tasks/open-for-request/$taskID',
+      );
+      if(response.statusCode ==200){
+        return response.statusCode;
+      }else{
+        return response.statusCode;
+      }
+
+    }on DioError catch (e) {
+      return dioError(e);
+    }
+  }
+
+  postClosedRequest({required int taskID})async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      dio.options.headers = {"Authorization" : 'Bearer ${tokenStore.accessToken}'};
+      response = await dio.patch('tasks/close-for-request/$taskID',
+      );
+      if(response.statusCode ==200){
+        return response.statusCode;
+      }else{
+        return response.statusCode;
       }
 
     }on DioError catch (e) {
@@ -258,11 +318,10 @@ class RestServices{
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
-        var myList = jsonDecode(await response.stream.bytesToString());
-        return myList;
+        return true;
       }
       else {
-        print('error isHaveWithSame');
+        return false;
       }
     }on DioError catch (e){
       return dioError(e);
@@ -417,7 +476,6 @@ class RestServices{
       var request = http.Request('POST', Uri.parse('https://remontor.kz/service/status/complete-task?chatRoomId=$chatRoomId'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
-      print(response.statusCode);
       if (response.statusCode == 200) {
         Navigator.pop(rootNavigatorKey.currentContext!);
         MotionToast.success(
@@ -535,7 +593,6 @@ class RestServices{
       var request = http.Request('POST', Uri.parse('https://remontor.kz/service/status/confirm-work?chatRoomId=$chatRoomId'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
-      print(response.statusCode);
       if (response.statusCode == 200) {
         Navigator.pop(rootNavigatorKey.currentContext!);
         MotionToast.success(
@@ -568,7 +625,6 @@ class RestServices{
       var request = http.Request('POST', Uri.parse('https://remontor.kz/service/status/complete-work?chatRoomId=$chatRoomId'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
-      print(response.statusCode);
       if (response.statusCode == 200) {
         Navigator.pop(rootNavigatorKey.currentContext!);
         MotionToast.success(
@@ -600,7 +656,6 @@ class RestServices{
       var request = http.Request('POST', Uri.parse('https://remontor.kz/service/status/reject-work?chatRoomId=$chatRoomId'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
-      print(response.statusCode);
       if (response.statusCode == 200) {
         Navigator.pop(rootNavigatorKey.currentContext!);
         MotionToast.error(
@@ -639,8 +694,6 @@ class RestServices{
       if (response.statusCode == 200) {
         List myList = jsonDecode(await response.stream.bytesToString());
         var list = myList.map((e) => ChatList.fromJson(e)).toList();
-        GetProfile profile = await RestServices().getMyProfile();
-        profileByChat = profile;
         return  list;
       }
     }on DioError catch (e){
@@ -657,6 +710,26 @@ class RestServices{
         'Authorization': 'Bearer ${tokenStore.accessToken}'
       };
       var request = http.Request('GET', Uri.parse('https://remontor.kz/service/get-completed-chats'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getCompletedAllPublicationClient()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Authorization': 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-completed-requests'));
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
@@ -691,22 +764,15 @@ class RestServices{
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
         return response.statusCode;
-      }else if(response.statusCode == 401){
-        showToasts('Пользователь с таким');
       }
       else {
-
-        showToasts('Пользователь с таким уже зарегистрирован');
-
-        print(response.reasonPhrase);
+        showToastsError('Пользователь с таким уже зарегистрирован');
       }
 
     }on DioError catch (e){
-  print(e);
-
+      print(e);
       return dioError(e);
     }
-
   }
 
   checkSmsCode({required int code, required String userName})async{
@@ -807,8 +873,6 @@ class RestServices{
         return  myList.map((e) => TaskModel.fromJson(e)).toList();
       }
       else {
-        print(await response.stream.bytesToString());
-        print(response.statusCode);
         print('error getMyTasks');
       }
     }on DioError catch (e){
@@ -818,7 +882,6 @@ class RestServices{
 
   getMyPublication({required String userName})async{
     try{
-
       var headers = {
         'Accept-Language': 'ru',
         'Content-Type': 'application/json'
@@ -830,10 +893,343 @@ class RestServices{
         List myList = jsonDecode(await response.stream.bytesToString());
         return  myList.map((e) => PublicationModel.fromJson(e)).toList();
       }
-
       else {
-        print(response.statusCode);
-        print(await response.stream.bytesToString());
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  isHaveNewMessage()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/is-have-new-messages'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        var myList = jsonDecode(await response.stream.bytesToString());
+        return  myList;
+      }
+      else {
+        print('error isHaveNewMessage');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getMyPublicationWithToken({required String userName})async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/publications/user/$userName'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => PublicationModel.fromJson(e)).toList();
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+
+  getMyActivateTask()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/tasks/get-my-active-tasks'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => TaskModel.fromJson(e)).toList();
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getMyDeActivateTask()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/tasks/get-my-not-active-tasks'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => TaskModel.fromJson(e)).toList();
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getMyActivatePublication()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/publications/get-my-active-pub'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => PublicationModel.fromJson(e)).toList();
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getCompetedPublicationForClient()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-completed-requests'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getMyActivateRequestPub()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-active-requests'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getCompleteTaskForWorker()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-completed-responses'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getCompleteTaskForClient(int id)async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-completed-task/$id'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+
+  getActivateRequestTask()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-active-responses'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getActivateRequestTaskId(int id)async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-active-task/$id'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+
+  getMyChatByPubId(int id)async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-active-publication/$id'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+  getMyCompeteByPubId(int id)async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-completed-publication/$id'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        var list = myList.map((e) => ChatList.fromJson(e)).toList();
+        return  list;
+      }
+      else {
+        print('error getMyPublication');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+
+  getMyDeActivatePublication()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+
+
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/publications/get-my-not-active-pub'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => PublicationModel.fromJson(e)).toList();
+      }
+      else {
         print('error getMyPublication');
       }
     }on DioError catch (e){
@@ -845,7 +1241,8 @@ class RestServices{
 
   getPublicationById(int id)async{
     try{
-      response = await dio.get('publications/$id');
+      var response = await dio.get('publications/$id');
+
       if(response.statusCode ==200){
         var jsonData = json.encode(response.data);
         return PublicationModel.fromJson(jsonDecode(jsonData));
@@ -875,26 +1272,54 @@ class RestServices{
     }
   }
 
-  getAllReviewByPublication(String userName)async{
+  getAllReviewByPublication({required String userName, required int categoryId, required int rating})async{
     try{
       var headers = {
         'Accept-Language': 'ru',
         'Content-Type': 'application/json'
       };
       var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/comments/executor/$userName'));
+      request.body = json.encode({
+        "categoryId": categoryId==0 ? null : categoryId,
+        "rating": rating==0 ? null : rating
+      });
       request.headers.addAll(headers);
       http.StreamedResponse response = await request.send();
       if (response.statusCode == 200) {
-        List myList = jsonDecode(await response.stream.bytesToString());
-        return  myList.map((e) => PublicationReview.fromJson(e)).toList();
+        var myList = jsonDecode(await response.stream.bytesToString());
+        PublicationReview publicationReview = PublicationReview.fromJson(myList);
+        return publicationReview;
       }
       else {
+        print(await response.stream.bytesToString());
         print('error getAllReviewByPublication');
       }
     }on DioError catch (e) {
       return dioError(e);
     }
+  }
 
+  getCompletedWorkProfile(String userName)async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json',
+        "Authorization" : 'Bearer ${tokenStore.accessToken}'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/comments/get-completed-works/$userName'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        var myList = jsonDecode(await response.stream.bytesToString());
+       return myList;
+      }
+      else {
+        print('error getCompletedWork');
+      }
+    }on DioError catch (e) {
+      return dioError(e);
+    }
   }
 
   getReviewExists(String chatRoomId)async{
@@ -945,6 +1370,58 @@ class RestServices{
     }
   }
 
+
+  getMyCompeteTask()async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}",
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/tasks/get-my-completed-tasks'));
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        List myList = jsonDecode(await response.stream.bytesToString());
+        return  myList.map((e) => TaskModel.fromJson(e)).toList();
+      }
+      else {
+        print('error getAllTask');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
+
+  getCountMessageByID({required String type, required List<int> id})async{
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}",
+        'Accept-Language': 'ru',
+        'Content-Type': 'application/json'
+      };
+      var request = http.Request('GET', Uri.parse('https://remontor.kz/service/chat/get-count-of-new-messages'));
+      request.body = json.encode({
+        "type": type,
+        "ids": id,
+      });
+      request.headers.addAll(headers);
+      http.StreamedResponse response = await request.send();
+      if (response.statusCode == 200) {
+        var myList = jsonDecode(await response.stream.bytesToString());
+       return myList;
+      }
+      else {
+        print('error getAllTask');
+      }
+    }on DioError catch (e){
+      return dioError(e);
+    }
+  }
+
   getAllPublicationByCategory(int categoryId)async{
     try{
       final tokenStore = getIt.get<TokenStoreService>();
@@ -979,7 +1456,13 @@ class RestServices{
     }
   }
 
-  getAllPublicationByCategoryFilter(int categoryId, int cityId, int fromPrice, int toPrice, bool isContractual)async{
+  getAllPublicationByCategoryFilter(
+      {required int categoryId,
+      required int cityId,
+      required int fromPrice,
+      required int toPrice,
+      required bool isContractual,
+      required String sorting})async{
     try{
       final tokenStore = getIt.get<TokenStoreService>();
       var headers = {
@@ -992,11 +1475,19 @@ class RestServices{
         'Content-Type': 'application/json'
       };
       var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/publications'));
-      request.body = json.encode({
+      request.body = fromPrice==0 || isContractual==false ?
+      json.encode({
         "categoryId": categoryId,
         "page": 0,
         "pageSize": 10,
-        "sorting": "NEW",
+        "sorting": sorting,
+        "status": "ACTIVATED",
+        "cityId": cityId
+      }) : json.encode({
+        "categoryId": categoryId,
+        "page": 0,
+        "pageSize": 10,
+        "sorting": sorting,
         "status": "ACTIVATED",
         "cityId": cityId,
         "fromPrice": fromPrice,
@@ -1047,7 +1538,13 @@ class RestServices{
     }
   }
 
-  getAllTaskByCategoryFilter(int categoryId, int cityId, int fromPrice, int toPrice, bool isContractual)async{
+  getAllTaskByCategoryFilter(
+      {required int categoryId,
+      required int cityId,
+      required int fromPrice,
+      required int toPrice,
+      required bool isContractual,
+      required String sorting})async{
     try{
 
       var headers = {
@@ -1055,11 +1552,19 @@ class RestServices{
         'Content-Type': 'application/json'
       };
       var request = http.Request('GET', Uri.parse('https://remontor.kz/publication/v1/tasks'));
-      request.body = json.encode({
+      request.body =  request.body = fromPrice==0 || isContractual==false ?
+      json.encode({
         "categoryId": categoryId,
         "page": 0,
         "pageSize": 10,
-        "sorting": "NEW",
+        "sorting": sorting,
+        "status": "ACTIVATED",
+        "cityId": cityId
+      }) : json.encode({
+        "categoryId": categoryId,
+        "page": 0,
+        "pageSize": 10,
+        "sorting": sorting,
         "status": "ACTIVATED",
         "cityId": cityId,
         "fromPrice": fromPrice,
@@ -1154,7 +1659,6 @@ class RestServices{
       var response = await dio.post('publications', data: body, options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
@@ -1175,7 +1679,6 @@ class RestServices{
       var response = await dio.post('publications/deactivate-pub/$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
@@ -1197,13 +1700,12 @@ class RestServices{
       var response = await dio.post('publications/activate-pub/$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
       if(e.response?.data!=null){
         final value = ErrorMessage.fromJson(e.response?.data);
-        print(value);
+        return value;
       }
 
       return dioError(e);
@@ -1219,7 +1721,6 @@ class RestServices{
       var response = await dio.post('publications/delete-pub/$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
@@ -1244,7 +1745,6 @@ class RestServices{
       var response = await dio.post('tasks/deactivate-task/$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
@@ -1266,7 +1766,6 @@ class RestServices{
       var response = await dio.post('tasks/activate-task/$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
@@ -1285,16 +1784,16 @@ class RestServices{
       var headers = {
         HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
       };
-      var response = await dio.post('tasks/delete-task/$id', options: Options(
+      var response = await dio.post('tasks/delete-task?taskId=$id', options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
+      print(e.response!.statusCode);
       if(e.response?.data!=null){
         final value = ErrorMessage.fromJson(e.response?.data);
-        print(value);
+        print(value.toJson());
       }
 
       return dioError(e);
@@ -1313,22 +1812,42 @@ class RestServices{
       var response = await dio.patch('publications', data: body, options: Options(
           headers: headers
       ));
-      print(response.statusCode);
 
       return response.statusCode;
     }on DioError catch (e) {
       if(e.response?.data!=null){
         final value = ErrorMessage.fromJson(e.response?.data);
+        print(value.message);
       }
-
       return dioError(e);
     }
+  }
 
+  editTask(EditTask entity)async{
+    try{
+      var jsonBody = entity.toMapCreate();
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
+      };
+      var body = json.encode(jsonBody);
+
+      var response = await dio.patch('tasks', data: body, options: Options(
+          headers: headers
+      ));
+
+      return response.statusCode;
+    }on DioError catch (e) {
+      if(e.response?.data!=null){
+        print(e.response?.data);
+        final value = ErrorMessage.fromJson(e.response?.data);
+      }
+      return dioError(e);
+    }
   }
 
 
   addFavourite(String id)async{
-    print(id);
     final tokenStore = getIt.get<TokenStoreService>();
     var headers = {
       HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
@@ -1336,7 +1855,6 @@ class RestServices{
     var response = await dio.post('publications/add-to-my-favourite?pubId=$id', options: Options(
         headers: headers
     ));
-    print(response.statusCode);
     return response.data;
   }
 
@@ -1348,12 +1866,11 @@ class RestServices{
     var response = await dio.post('publications/delete-from-my-favourite?pubId=$id', options: Options(
         headers: headers
     ));
-    print(response.statusCode);
     return response.data;
   }
 
   addFavouriteTask(String id)async{
-    print(id);
+
     final tokenStore = getIt.get<TokenStoreService>();
     var headers = {
       HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
@@ -1361,7 +1878,7 @@ class RestServices{
     var response = await dio.post('tasks/add-to-my-favourite?taskId=$id', options: Options(
         headers: headers
     ));
-    print(response.statusCode);
+
     return response.data;
   }
 
@@ -1373,7 +1890,6 @@ class RestServices{
     var response = await dio.post('tasks/delete-from-my-favourite?taskId=$id', options: Options(
         headers: headers
     ));
-    print(response.statusCode);
     return response.data;
   }
 
@@ -1410,36 +1926,60 @@ class RestServices{
   }
 
   createNewTask(TaskPublication entity)async{
-    final tokenStore = getIt.get<TokenStoreService>();
-    print(tokenStore.accessToken);
-    var headers = {
-      HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
-    };
-    var jsonBody = entity.toMapCreate();
-    var body = json.encode(jsonBody);
-    var response = await dio.post('tasks', data: body, options: Options(
-      headers: headers
-    ));
-    return response.data;
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
+      var headers = {
+        HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
+      };
+      var jsonBody = entity.toMapCreate();
+      var body = json.encode(jsonBody);
+      var response = await dio.post('tasks', data: body, options: Options(
+          headers: headers
+      ));
+      return response.statusCode;
+    }on DioError catch (e) {
+      if(e.response?.data!=null){
+        final value = ErrorMessage.fromJson(e.response?.data);
+        if(value.message == 'PUBLICATION_LIMIT_MAX'){
+          MotionToast.error(
+            description: const Text(
+              'Вы превысили лимит создание задание',
+              style: TextStyle(fontSize: 12),
+            ),
+            position: MotionToastPosition.top,
+            layoutOrientation: ToastOrientation.ltr,
+            animationType: AnimationType.fromTop,
+            dismissable: true,
+          ).show(rootNavigatorKey.currentContext!);
+        }
+      }
+      return dioError(e);
+    }
+
   }
 
   createNewComment(TaskComment entity)async{
-    final tokenStore = getIt.get<TokenStoreService>();
+    try{
+      final tokenStore = getIt.get<TokenStoreService>();
 
-    var headers = {
-      HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
-    };
-    var jsonBody = entity.toMapCreate();
-    var body = json.encode(jsonBody);
-    print(body);
-    var response = await dio.post('comments', data: body, options: Options(
-        headers: headers
-    ));
-    if(response.statusCode == 200){
-      return response.statusCode;
-    }else{
-      return null;
+      var headers = {
+        HttpHeaders.authorizationHeader: "Bearer ${tokenStore.accessToken}"
+      };
+      var jsonBody = entity.toMapCreate();
+      var body = json.encode(jsonBody);
+      var response = await dio.post('comments', data: body, options: Options(
+          headers: headers
+      ));
+      if(response.statusCode == 200){
+        return response.statusCode;
+      }else{
+        return null;
+      }
+    }on DioError catch (e) {
+      print(e.response!.data);
+      return dioError(e);
     }
+
 
   }
 
@@ -1546,9 +2086,7 @@ class RestServices{
     request.headers.addAll(headers);
     final  response = await request.send();
     var responseBody = await http.Response.fromStream(response);
-    print(responseBody.statusCode);
     if(responseBody.statusCode ==200){
-      print('succesы');
       Map<String, dynamic> jsonMap = json.decode(responseBody.body);
       var filesBody = FileDescriptor.fromJson(jsonMap);
       return filesBody;

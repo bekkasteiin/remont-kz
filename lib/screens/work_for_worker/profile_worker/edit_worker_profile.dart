@@ -29,7 +29,28 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
   String? name;
   String? lastName;
   String? address;
+  late String formattedNumber;
   String? newPhotoUrl;
+
+  String formatPhone(String input) {
+    if (input.length >= 10) {
+      final countryCode = '+${input.substring(0, 1)}';
+      final areaCode = input.substring(1, 4);
+      final firstPart = input.substring(4, 7);
+      final secondPart = input.substring(7, 9);
+      final thirdPart = input.substring(9);
+      formattedNumber =
+      '$countryCode ($areaCode) $firstPart-$secondPart-$thirdPart';
+
+      return formattedNumber;
+    } else {
+      setState(() {
+        formattedNumber = '';
+      });
+      return formattedNumber;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -71,7 +92,7 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
                                   child: CircleAvatar(
                                       radius: 75.w,
                                       backgroundImage:
-                                          NetworkImage(currentPhotoUrl ?? '')),
+                                          NetworkImage(currentPhotoUrl)),
                                 )
                               : Center(
                                   child: CircleAvatar(
@@ -89,14 +110,11 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           GestureDetector(
-                            onTap: () {
-                              newPhotoUrl = null;
+                            onTap: () async{
                               profile.photoUrl = null;
-                              userProfileUrl = null;
-                              setState(() {
+                              await RestServices().editProfile(profile);
 
-                              });
-                              print(currentPhotoUrl);
+                              setState(() {});
                             },
                             child: Container(
                               padding: EdgeInsets.symmetric(
@@ -158,9 +176,9 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
                       ),
                       FieldBones(
                         placeholder: "Ваш номер телефона",
-                        editable: true,
-                        isTextField: true,
-                        textValue: profile.username ?? '',
+                        editable: false,
+                        isTextField: false,
+                        textValue: formatPhone(profile.username ?? ''),
                       ),
                       FieldBones(
                         placeholder: "Ваш адрес",
@@ -175,7 +193,6 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
                       HBox(24.h),
                       GestureDetector(
                         onTap: () async {
-                          print(profile.photoUrl);
                           if (userProfileUrl != null) {
                             profile.photoUrl = userProfileUrl;
                           }
@@ -219,7 +236,7 @@ class _EditWorkerProfileState extends State<EditWorkerProfile> {
                           width: MediaQuery.of(context).size.width / 1.1,
                           decoration: BoxDecoration(
                               color: AppColors.primary,
-                              borderRadius: BorderRadius.circular(8.w)),
+                              borderRadius: BorderRadius.circular(4.w)),
                           child: Center(
                             child: Text(
                               'Применить',

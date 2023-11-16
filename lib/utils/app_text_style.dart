@@ -165,6 +165,15 @@ class AppTextStyles {
     //fontFamily: FontFamily.openSans,
   );
 
+
+  static final bodySecondaryTen = TextStyle(
+    fontSize: 10.sp,
+    fontWeight: FontWeight.w400,
+    height: 1.23,
+    color: AppColors.primaryGray,
+    //fontFamily: FontFamily.openSans,
+  );
+
   static final body14Secondary = TextStyle(
     fontSize: 14.sp,
     fontWeight: FontWeight.w400,

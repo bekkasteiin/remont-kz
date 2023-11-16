@@ -1,7 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
+import 'package:dependencies/dependencies.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -23,42 +26,54 @@ import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
 
-
 ///flutter pub run build_runner build --delete-conflicting-outputs
 ///команда для генерация file_name.g.dart или других
 ///
 List<MainList> createTaskList = [];
 TaskModel? modelTaskChat;
-late GetProfile profileByChat;
 List<ChatRoom> messagesList = [];
+bool? newMessage;
 final tokenStore = getIt.get<TokenStoreService>();
+String formatMonthNamedDate(DateTime dateTime) {
+  if (dateTime == null) {
+    return ' ';
+  }
+  return DateFormat('dd MMM yyyy г').format(dateTime);
+}
 
-class MyHttpOverrides extends HttpOverrides{
+ String dateFormatForChat(final dateTimeString){
+DateTime parsedDateTime = DateFormat("yyyy-MM-ddTHH:mm:ssZ").parse('$dateTimeString');
+var dateOnline = DateFormat('HH:mm').format(parsedDateTime);
+return dateOnline.toString();
+}
+
+class MyHttpOverrides extends HttpOverrides {
   @override
-  HttpClient createHttpClients(SecurityContext context){
+  HttpClient createHttpClients(SecurityContext context) {
     return super.createHttpClient(context)
-      ..badCertificateCallback = (X509Certificate cert, String host, int port)=> true;
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
 
-
-void onConnect(StompFrame frame) async{
+void onConnect(StompFrame frame) async {
   print(frame.headers);
   print(frame.body);
   GetProfile profile = GetProfile();
   profile = await RestServices().getMyProfile();
   stompClient.subscribe(
       destination: '/user/${profile.username}/queue/messages',
-      callback: (frame) async{
+      callback: (frame) async {
+        print(frame.body);
+        print(frame.command);
         Map<String, dynamic> jsonData = json.decode(frame.body.toString());
         String id = jsonData['id'].toString();
-
         var headers = {
           'Accept-Language': 'ru',
           'Authorization': 'Bearer ${tokenStore.accessToken}'
         };
-        var request = http.Request('GET', Uri.parse(
-            'https://remontor.kz/service/message/$id'));
+        var request = http.Request(
+            'GET', Uri.parse('https://remontor.kz/service/message/$id'));
         request.headers.addAll(headers);
         http.StreamedResponse response = await request.send();
         if (response.statusCode == 200) {
@@ -66,8 +81,7 @@ void onConnect(StompFrame frame) async{
           var add = ChatRoom.fromJson(jsonDecode(responseChat));
           messagesList.add(add);
         }
-       });
-
+      });
 }
 
 final stompClient = StompClient(
@@ -79,32 +93,39 @@ final stompClient = StompClient(
       await Future.delayed(Duration(milliseconds: 200));
       print('connecting...');
     },
-    onWebSocketError: (dynamic error){
+    onWebSocketError: (dynamic error) {
       print(error.toString());
     },
-    stompConnectHeaders: {'Authorization': 'Bearer ${tokenStore.accessToken}', 'Upgrade': 'websocket',
-      'Connection': 'Upgrade'},
-    webSocketConnectHeaders:
-    {'Authorization': 'Bearer ${tokenStore.accessToken}', 'Upgrade': 'websocket',
-      'Connection': 'Upgrade'},
+    stompConnectHeaders: {
+      'Authorization': 'Bearer ${tokenStore.accessToken}',
+      'Upgrade': 'websocket',
+      'Connection': 'Upgrade'
+    },
+    webSocketConnectHeaders: {
+      'Authorization': 'Bearer ${tokenStore.accessToken}',
+      'Upgrade': 'websocket',
+      'Connection': 'Upgrade'
+    },
   ),
 );
 
-void main() async{
-  return CoreConfig().initDI(() => init()).setApp(
-       const RepairApp()).build();
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  return CoreConfig().initDI(() => init()).setApp(const RepairApp()).build();
 }
 
-final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 class RepairApp extends StatelessWidget {
-   const RepairApp({Key? key}) : super(key: key);
+  const RepairApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return  ScreenUtilInit(
+    return ScreenUtilInit(
       designSize: const Size(360, 760),
       builder: (_, __) {
         return ChangeNotifierProvider(
@@ -113,6 +134,14 @@ class RepairApp extends StatelessWidget {
             return GestureDetector(
               onTap: () => KeyboardUtil.hideKeyboard(context),
               child: MaterialApp(
+                builder: (BuildContext context, Widget? child) {
+                  return MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaleFactor: 1.0,
+                    ),
+                    child: child!,
+                  );
+                },
                 navigatorKey: rootNavigatorKey,
                 scaffoldMessengerKey: rootScaffoldMessengerKey,
                 debugShowCheckedModeBanner: false,

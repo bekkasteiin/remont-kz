@@ -13,6 +13,9 @@ String publicationModelToJson(List<PublicationModel> data) => json.encode(List<d
 class PublicationModel {
   int id;
   int categoryId;
+  int countCompletedWorks;
+  int countReview;
+  int view;
   String address;
   String title;
   String description;
@@ -28,6 +31,9 @@ class PublicationModel {
   PublicationModel({
     required this.id,
     required this.categoryId,
+    required this.countReview,
+    required this.view,
+    required this.countCompletedWorks,
     required this.address,
     required this.title,
     required this.description,
@@ -43,7 +49,10 @@ class PublicationModel {
 
   factory PublicationModel.fromJson(Map<String, dynamic> json) => PublicationModel(
     id: json["id"],
+    view: json["view"],
     categoryId: json["categoryId"],
+    countReview: json["countReview"],
+    countCompletedWorks: json["countCompletedWorks"],
     address: json["address"],
     title: json["title"],
     description: json["description"],
@@ -60,7 +69,10 @@ class PublicationModel {
   Map<String, dynamic> toJson() => {
     "id": id,
     "categoryId": categoryId,
+    "countCompletedWorks": countCompletedWorks,
+    "countReview": countReview,
     "address": address,
+    "view": view,
     "title": title,
     "description": description,
     "price": price,

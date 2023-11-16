@@ -36,8 +36,8 @@ class HelpScreen extends StatelessWidget {
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 0,
-                      blurRadius: 8,
-                      offset: Offset(0, 3), // changes position of shadow
+                      blurRadius: 4,
+                      offset: Offset(0, 1.w), // changes position of shadow
                     ),
                   ],
                 ),
@@ -71,8 +71,8 @@ class HelpScreen extends StatelessWidget {
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.5),
                       spreadRadius: 0,
-                      blurRadius: 8,
-                      offset: Offset(0, 3), // changes position of shadow
+                      blurRadius: 4,
+                      offset: Offset(0, 1.w), // changes position of shadow
                     ),
                   ],
                 ),

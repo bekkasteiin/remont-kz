@@ -1,6 +1,5 @@
 
 import 'package:flutter/cupertino.dart';
-import 'package:remont_kz/data/api_builder.dart';
 import 'package:remont_kz/di.dart';
 import 'package:remont_kz/domain/entities/token_model.dart';
 import 'package:remont_kz/domain/services/token_store_interface.dart';
@@ -51,7 +50,6 @@ class TokenStoreService implements TokenStoreInterface {
   @override
   Future<void> saveToken(TokenModel tokenModel) async {
     await tokenStorage?.setString(storageTokenKey, tokenModel.serialize());
-    getIt.get<ApiBuilder>().dio.options.headers['Authorization'] = 'Bearer ${tokenModel.accessToken}';
     storage = tokenModel;
   }
 

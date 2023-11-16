@@ -20,6 +20,7 @@ class GetProfile {
   String? address;
   String? aboutMe;
   String? cityDto;
+  DateTime? createdDate;
 
   GetProfile({
     this.id,
@@ -33,6 +34,7 @@ class GetProfile {
     this.address,
     this.aboutMe,
     this.cityDto,
+    this.createdDate,
   });
 
   factory GetProfile.fromJson(Map<String, dynamic> json) => GetProfile(
@@ -47,6 +49,7 @@ class GetProfile {
     address: json["address"],
     aboutMe: json["aboutMe"],
     cityDto: json["cityDto"],
+    createdDate: DateTime.parse(json["createdDate"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -61,5 +64,6 @@ class GetProfile {
     "address": address,
     "aboutMe": aboutMe,
     "cityDto": cityDto,
+    "createdDate": createdDate?.toIso8601String(),
   };
 }

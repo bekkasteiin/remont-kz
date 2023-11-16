@@ -1,5 +1,4 @@
 import 'package:get_it/get_it.dart';
-import 'package:remont_kz/data/api_builder.dart';
 import 'package:remont_kz/domain/services/token_store_service.dart';
 
 final getIt = GetIt.instance;
@@ -15,7 +14,6 @@ Future<void> init() async {
 
 void _registerSingletons() {
   //для будущего разработки
-  getIt.registerSingleton<ApiBuilder>(ApiBuilder());
   getIt.registerSingleton<TokenStoreService>(TokenStoreService());
 
 

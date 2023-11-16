@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:remont_kz/screens/category/category_screen.dart';
 import 'package:remont_kz/screens/connection/screens/connection_error_screen.dart';
 import 'package:remont_kz/screens/help/help_screen.dart';
 import 'package:remont_kz/screens/login/phone_screen.dart';
 import 'package:remont_kz/screens/login/sign_screen.dart';
-import 'package:remont_kz/screens/task/category/category_screen.dart';
 import 'package:remont_kz/screens/task/main_nav.dart';
 import 'package:remont_kz/screens/work_for_worker/main_nav_for_worker.dart';
 import 'package:remont_kz/splash_screen.dart';

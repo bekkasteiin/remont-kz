@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:remont_kz/domain/services/rest_services.dart';
 import 'package:remont_kz/model/task/task_model.dart';
+import 'package:remont_kz/screens/category/category_screen.dart';
 import 'package:remont_kz/screens/my_order/my_publication.dart';
-import 'package:remont_kz/screens/task/category/category_screen.dart';
+import 'package:remont_kz/screens/usefull_tips/usefull_tips_screen.dart';
 import 'package:remont_kz/screens/work_for_worker/favorite/favorite_screen.dart';
 import 'package:remont_kz/screens/work_for_worker/main_screen_worker/detail_task_screen.dart';
 import 'package:remont_kz/utils/app_colors.dart';
 import 'package:remont_kz/utils/app_text_style.dart';
 import 'package:remont_kz/utils/box.dart';
+import 'package:remont_kz/utils/global_widgets/task_card_view.dart';
 
 class MainWorkerScreen extends StatefulWidget {
   const MainWorkerScreen({Key? key}) : super(key: key);
@@ -29,19 +31,23 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: false,
-        title: Row(
-          children: [
-            Image.asset(
-              'assets/images/g10.png',
-              width: 24.w,
-              height: 22.h,
-            ),
-            Image.asset(
-              'assets/images/repair.png',
-              width: 88.w,
-              height: 16.h,
-            )
-          ],
+        title: SizedBox(
+          height: 22.h,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              Image.asset(
+                'assets/images/g10.png',
+                width: 24.w,
+                height: 22.h,
+              ),
+              WBox(12.w),
+              const Text('REMONT.KZ', style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.white
+              ),),
+            ],
+          ),
         ),
         actions: [
           PopupMenuButton(
@@ -55,7 +61,7 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                 const Icon(
                   Icons.arrow_drop_down_outlined,
                   color: AppColors.white,
-                )
+                ),
               ],
             ),
             color: Colors.blue,
@@ -71,13 +77,6 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                 value: 'Рус',
                 child: Text(
                   "Рус",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-              const PopupMenuItem<String>(
-                value: 'Eng',
-                child: Text(
-                  "Eng",
                   style: TextStyle(color: Colors.white),
                 ),
               ),
@@ -101,7 +100,7 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                   BoxShadow(
                     color: Colors.grey.withOpacity(0.5),
                     spreadRadius: 0,
-                    blurRadius: 8,
+                    blurRadius: 4,
                     offset: Offset(0, 1.h),
                   ),
                 ],
@@ -146,34 +145,39 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                     height: 1.h,
                     color: AppColors.darkGray,
                   ),
-                  Container(
-                    height: 40.h,
-                    padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Image.asset(
-                              'assets/images/advice.png',
-                              width: 20.w,
-                              height: 16.h,
-                              fit: BoxFit.fitHeight,
-                            ),
-                            SizedBox(width: 24.w,),
-                            Text(
-                              'Полезные советы',
-                              style: AppTextStyles.body14Secondary,
-                              textAlign: TextAlign.left,
-                            ),
-                          ],
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 18.h,
-                          color: AppColors.blackGreyText,
-                        ),
-                      ],
+                  GestureDetector(
+                    onTap: (){
+                      Navigator.push(context, MaterialPageRoute(builder: (_)=>const UseFullTipsScreen()));
+                    },
+                    child: Container(
+                      height: 40.h,
+                      padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Image.asset(
+                                'assets/images/advice.png',
+                                width: 20.w,
+                                height: 16.h,
+                                fit: BoxFit.fitHeight,
+                              ),
+                              SizedBox(width: 24.w,),
+                              Text(
+                                'Полезные советы',
+                                style: AppTextStyles.body14Secondary,
+                                textAlign: TextAlign.left,
+                              ),
+                            ],
+                          ),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 18.h,
+                            color: AppColors.blackGreyText,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Container(
@@ -206,7 +210,6 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                               ),
                             ],
                           ),
-
                           Icon(
                             Icons.arrow_forward_ios,
                             size: 18.h,
@@ -263,9 +266,9 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
               ),
             ),
             Container(
-              margin: EdgeInsets.only(left: 12.w, top: 12.h, bottom: 6.h),
+              margin: EdgeInsets.only(left: 12.w, top: 12.h, bottom: 12.h),
               child: Text(
-                'Актуальные предложения',
+                'Актуальные задания',
                 style: AppTextStyles.h18Regular.copyWith(
                     color: AppColors.blackGreyText,
                     fontWeight: FontWeight.w400),
@@ -283,135 +286,21 @@ class _MainWorkerScreenState extends State<MainWorkerScreen> {
                       physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
                         TaskModel items = model[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => DetailTaskScreen(
-                                          id: items.id,
-                                        ),),).then((value) => setState((){}));
-                          },
-                          child: Container(
-                            padding: EdgeInsets.all(12.w),
-                            margin: EdgeInsets.symmetric(vertical: 6.h),
-                            decoration: BoxDecoration(
-                              color: items.favourite
-                                  ? AppColors.primaryYellowColor
-                                  : AppColors.white,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.5),
-                                  spreadRadius: 0,
-                                  blurRadius: 8,
-                                  offset: Offset(
-                                      0, 3.h), // changes position of shadow
-                                ),
-                              ],
+                        return Column(
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (_) => DetailTaskScreen(
+                                              id: items.id,
+                                            ),),).then((value) => setState((){}),);
+                              },
+                              child: TaskCardView(items: items,),
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Stack(
-                                  children: [
-                                    items.files.isNotEmpty ?
-                                    Container(
-                                      height: 146.h,
-                                      width: MediaQuery.of(context).size.width,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4.w),
-                                        image: DecorationImage(
-                                          image:
-                                              NetworkImage(items.files.first.url),
-                                          fit: BoxFit.fill,
-                                        ),
-                                      ),
-                                    ) : Container(
-                                      height: 146.h,
-                                      width: MediaQuery.of(context).size.width,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(4.w),
-                                        color: AppColors.graySearch
-                                      ),
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: const [
-                                          Icon(Icons.no_photography_outlined),
-                                          Text('Нет фото')
-                                        ],
-                                      ),
-                                    ),
-                                    items.files.isNotEmpty ?
-                                    Positioned(
-                                      bottom: 4,
-                                      right: 4,
-                                      child: Container(
-                                        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(4.w),
-                                          color: AppColors.black.withOpacity(0.5),
-                                        ),
-                                        child: Text("1/${items.files.length.toString()}",
-                                          style: AppTextStyles.captionPrimary.copyWith(color: AppColors.white),),
-                                      ),
-                                    ) : SizedBox(),
-                                  ],
-                                ),
-                                HBox(12.h),
-                                Text(
-                                  items.title,
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                HBox(6.h),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Категория',
-                                      style: AppTextStyles.body14Secondary
-                                          .copyWith(
-                                              color: AppColors.primaryGray),
-                                    ),
-                                    Text(items.category,
-                                        style: AppTextStyles.body14Secondary),
-                                  ],
-                                ),
-                                HBox(6.h),
-                                Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      'Стоимость работ',
-                                      style: AppTextStyles.body14Secondary
-                                          .copyWith(
-                                              color: AppColors.primaryGray),
-                                    ),
-                                    items.isContractual ?
-                                    Text("договорная",
-                                        style: AppTextStyles.body14Secondary)
-                                    :
-                                    Text("${items.price.toInt().toString()} ₸",
-                                        style: AppTextStyles.body14Secondary),
-                                  ],
-                                ),
-                                HBox(6.h),
-                                Text(
-                                  'Описание',
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(fontWeight: FontWeight.w600),
-                                ),
-                                HBox(6.h),
-                                Text(
-                                  items.description,
-                                  style: AppTextStyles.body14Secondary,
-                                  maxLines: 3,
-                                ),
-                              ],
-                            ),
-                          ),
+                            HBox(12.h),
+                          ],
                         );
                       });
                 } else {

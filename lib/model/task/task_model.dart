@@ -17,6 +17,7 @@ class TaskModel {
   String description;
   double price;
   bool isContractual;
+  bool openRequest;
   String status;
   dynamic category;
   int categoryId;
@@ -33,6 +34,7 @@ class TaskModel {
     required this.description,
     required this.price,
     required this.isContractual,
+    required this.openRequest,
     required this.status,
     this.category,
     required this.city,
@@ -50,6 +52,7 @@ class TaskModel {
     description: json["description"],
     price: json["price"],
     isContractual: json["isContractual"],
+    openRequest: json["openRequest"],
     status: json["status"],
     category: json["category"] ?? '',
     city: json["city"],
@@ -67,6 +70,7 @@ class TaskModel {
     "description": description,
     "price": price,
     "isContractual": isContractual,
+    "openRequest": openRequest,
     "status": status,
     "category": category,
     "city": city,

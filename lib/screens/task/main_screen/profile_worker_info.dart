@@ -1,10 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:remont_kz/domain/services/rest_services.dart';
+import 'package:remont_kz/main.dart';
 import 'package:remont_kz/model/profile/get_profile.dart';
 import 'package:remont_kz/model/publication/publication_model.dart';
 import 'package:remont_kz/model/publication/publication_review.dart';
 import 'package:remont_kz/model/task/task_model.dart';
+import 'package:remont_kz/screens/chat/chat_widget/load_shimmer.dart';
 import 'package:remont_kz/screens/task/main_screen/detail_worker_screen.dart';
 import 'package:remont_kz/screens/task/main_screen/show_all_rate_screen.dart';
 import 'package:remont_kz/screens/work_for_worker/main_screen_worker/detail_task_screen.dart';
@@ -12,6 +15,9 @@ import 'package:remont_kz/utils/app_colors.dart';
 import 'package:remont_kz/utils/app_text_style.dart';
 import 'package:remont_kz/utils/box.dart';
 import 'package:remont_kz/utils/date.dart';
+import 'package:remont_kz/utils/global_widgets/full_screen_image.dart';
+import 'package:remont_kz/utils/global_widgets/publication_card_view.dart';
+import 'package:remont_kz/utils/global_widgets/task_card_view.dart';
 
 class ProfilePersonInfo extends StatefulWidget {
   String username;
@@ -22,21 +28,20 @@ class ProfilePersonInfo extends StatefulWidget {
 }
 
 class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
-  List<PublicationReview> reviewModels = [];
   List<PublicationModel> modelPubl = [];
-  GetProfile profile = GetProfile();
+ GetProfile profile = GetProfile();
+ bool isLoading = true;
 
   @override
   void initState() {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       try {
         final loadProfile = await RestServices().getMyProfile();
-        final reviewModelRev =await RestServices().getAllReviewByPublication(widget.username);
 
         if (mounted) {
           setState(() {
-            reviewModels = reviewModelRev;
             profile = loadProfile;
+            isLoading = false;
           });
         }
       } catch (e) {
@@ -50,18 +55,20 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
 
   @override
   Widget build(BuildContext context) {
-    return  FutureBuilder(
+    return FutureBuilder(
         future: RestServices().getProfileByUsername(userName: widget.username),
         builder: (BuildContext context, AsyncSnapshot snapshot){
           if(snapshot.hasData){
-            GetProfile profile = snapshot.data;
-            print(profile.isClient);
+            GetProfile profileWork = snapshot.data;
             return Scaffold(
               backgroundColor: AppColors.white,
               appBar: AppBar(
                 automaticallyImplyLeading: false,
-                title: Text(
-                  profile.isClient! ? 'Профиль заказчика' : 'Профиль исполнителя',
+                title: isLoading?
+                    SizedBox()
+                :
+                Text(
+                  !profile.isClient! ? 'Профиль заказчика' : 'Профиль исполнителя',
                   style: AppTextStyles.h18Regular,
                 ),
                 leading: GestureDetector(
@@ -70,40 +77,73 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
                 ),
                 centerTitle: true,
               ),
-              body:SingleChildScrollView(
+              body: isLoading
+              ? LoadSimmer(): SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   HBox(24.h),
-                  if (profile.photoUrl!= null) Center(
+                  if (profileWork.photoUrl!= null) Center(
                     child: CircleAvatar(
                       radius: 75.w,
-                      backgroundImage: NetworkImage(profile.photoUrl),
+                      backgroundImage: NetworkImage(profileWork.photoUrl),
                     ),
                   ) else Center(
                     child: CircleAvatar(
                       radius: 75.w,
                     ),
                   ),
+                  Center(
+                    child: FutureBuilder(
+                        future: RestServices().getProfileSession(userName: profileWork.username??''),
+                        builder: (BuildContext context, AsyncSnapshot snapshotDate){
+                          if(snapshotDate.hasData){
+                            return  Column(
+                              children: [
+                                HBox(6.h),
+                                Text(
+                                    'Онлайн в ${snapshotDate.data}',
+                                  style: AppTextStyles
+                                      .body14Secondary
+                                      .copyWith(
+                                      color: AppColors
+                                          .primary),
+                                ),
+                              ],
+                            );
+                          }else{
+                            return SizedBox();
+                          }
+                        }),
+                  ),
                   HBox(12.h),
                   Center(
                     child: Text(
-                      '${profile.name ?? ''} ${profile.lastname ?? ''}',
+                      '${profileWork.name ?? ''} ${profileWork.lastname ?? ''}',
                       style: AppTextStyles.h18Regular.copyWith(color: AppColors.blackGreyText),),
                   ),
-                  !profile.isClient!
+                  profile.isClient!
                   ? HBox(12.h) : SizedBox(),
-                  !profile.isClient!
+                  profile.isClient!
                   ?
-                  Center(
-                    child: Text(
-                      'Работ ${modelPubl.length} |Отзывы (${reviewModels.length})',
-                      style: AppTextStyles.body14W500.copyWith(color: AppColors.blackGreyText),),
-                  ) : SizedBox(),
+                      FutureBuilder(
+                        future: RestServices().getCompletedWorkProfile(widget.username),
+                          builder: (BuildContext context, AsyncSnapshot snapshot){
+                          if(snapshot.hasData){
+                            return Center(
+                              child: Text(
+                                'Работ ${snapshot.data['countCompletedWorks']} | Отзывы (${snapshot.data['countReview']})',
+                                style: AppTextStyles.body14W500.copyWith(color: AppColors.blackGreyText),),
+                            );
+                          }else{
+                            return const SizedBox();
+                          }
+                      })
+                  : const SizedBox(),
                   HBox(12.h),
-                  !profile.isClient!
-                      ? isWorker(profile)
-                      : isClients(profile)
+                  profile.isClient!
+                      ? isWorker(profileWork)
+                      : isClients(profileWork)
                 ],
               ),
             ),
@@ -123,8 +163,8 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
           padding: EdgeInsets.symmetric(horizontal: 12.w),
           child: Text(
             'О исполнителе',
-            style: AppTextStyles.body14Secondary
-                .copyWith(color: AppColors.black, fontWeight: FontWeight.w500, fontSize: 16),
+            style: AppTextStyles.h18Regular
+                .copyWith(color: AppColors.blackGreyText, fontWeight: FontWeight.w400),
           ),
         ),
         HBox(12.h),
@@ -138,14 +178,15 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
               BoxShadow(
                 color: Colors.grey.withOpacity(0.5),
                 spreadRadius: 0,
-                blurRadius: 8,
-                offset: Offset(0, 3.w), // changes position of shadow
+                blurRadius: 4,
+                offset: Offset(0, 1.w), // changes position of shadow
               ),
             ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
+              readOnly: true,
               maxLines: 10,
               onChanged: (val) {},
               decoration: InputDecoration.collapsed(
@@ -161,16 +202,13 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
           padding: EdgeInsets.symmetric(horizontal: 12.w),
           child: Text(
             'Объявления исполнителя',
-            style: AppTextStyles.body14Secondary
-                .copyWith(color: AppColors.black, fontWeight: FontWeight.w500, fontSize: 16),
+            style: AppTextStyles.h18Regular
+                .copyWith(color: AppColors.blackGreyText, fontWeight: FontWeight.w400),
           ),
         ),
         HBox(12.h),
         myPublications(),
-        Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w),
-          child: getReview(),
-        ),
+        getReview(),
       ],
     );
   }
@@ -182,179 +220,59 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
 
 
   Widget myPublications(){
-
-    return widget.username!= null ?
-    FutureBuilder(
-      future: RestServices().getMyPublication(userName: widget.username),
+    return profile.username!=null?
+     FutureBuilder(
+      future: tokenStore.accessToken != null
+          ? RestServices().getMyPublicationWithToken(userName: widget.username)
+          : RestServices().getMyPublication(userName: widget.username),
       builder: (BuildContext context, AsyncSnapshot snapshot) {
         if (snapshot.hasData) {
           List<PublicationModel> model = snapshot.data;
           return ListView.builder(
+            padding: EdgeInsets.zero,
               scrollDirection: Axis.vertical,
               itemCount: model.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemBuilder: (context, index) {
                 PublicationModel items = model[index];
-                return GestureDetector(
-                  onTap: (){
-                    Navigator.push(context, MaterialPageRoute(builder: (_)=>DetailWorkerScreen(id: items.id, myPublication: profile.isClient! ? false : true,),),);
-                  },
-                  child: Container(
-                    padding: EdgeInsets.all(12.h),
-                    margin: EdgeInsets.symmetric(vertical: 6.h),
-                    decoration: BoxDecoration(
-                      color: items.favourite
-                          ? AppColors.primaryYellowColor
-                          : AppColors.white,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 0,
-                          blurRadius: 8,
-                          offset: Offset(0, 3.h), // changes position of shadow
-                        ),
-                      ],
+                return Column(
+                  children: [
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => DetailWorkerScreen(
+                              id: items.id,
+                            ),),).then(
+                                (value) => setState(() {}));
+                      },
+                      child: PublicationCardView(items: items,
+                        showStar: true,
+                        onTap: tokenStore.accessToken !=
+                            null
+                            ? () async {
+                          if (items.favourite) {
+                            await RestServices()
+                                .deleteFavouritePublication(
+                                items.id
+                                    .toString());
+                            setState(() {});
+                          } else {
+                            await RestServices()
+                                .addFavourite(items.id
+                                .toString());
+                          }
+                          setState(() {});
+                        }
+                            : null,),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              items.user.fullName,
-                              style: AppTextStyles.h18Regular.copyWith(
-                                  color: AppColors.primary,
-                                  fontWeight: FontWeight.w400),
-                            ),
-                          ],
-                        ),
-                        HBox(5.h),
-                        items.isContractual
-                        ? Text(
-                          'Договорная',
-                          style: AppTextStyles.body14Secondary,
-                        ):
-                        Text(
-                          'Цена: ${items.price.toInt()} ₸',
-                          style: AppTextStyles.body14Secondary,
-                        ),
-                        HBox(12.h),
-                        Row(
-                          children: [
-                            Stack(
-                              children: [
-                                items.files.isNotEmpty ?
-                                Container(
-                                  height: 85.h,
-                                  width: 156.w,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.w),
-                                    image: DecorationImage(
-                                      image: NetworkImage(items.files.first.url),
-                                      fit: BoxFit.fill,
-                                    ),
-                                  ),
-                                ) : Container(
-                                  height: 85.h,
-                                  width: 156.w,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.w),
-                                    color: AppColors.graySearch
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.no_photography_outlined),
-                                      Text('Нет фото')
-                                    ],
-                                  ),
-                                ),
-                                items.files.isNotEmpty?
-                                Positioned(
-                                  bottom: 4,
-                                  right: 4,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4.w),
-                                      color: AppColors.black.withOpacity(0.5),
-                                    ),
-                                    child: Text("1/${items.files.length.toString()}",
-                                      style: AppTextStyles.captionPrimary.copyWith(color: AppColors.white),),
-                                  ),
-                                ) : SizedBox()
-                              ],
-                            ),
-                            WBox(6.w),
-                            Column(
-                              crossAxisAlignment:
-                              CrossAxisAlignment.start,
-                              children: [
-                                SizedBox(
-                                  width: 162.w,
-                                  child: Text(
-                                    items.category,
-                                    style: AppTextStyles.body14Secondary
-                                        .copyWith(
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                HBox(12.h),
-                                SizedBox(
-                                  width: 162.w,
-                                  child: Text(
-                                    items.description,
-                                    style: AppTextStyles.body14Secondary
-                                        .copyWith(fontSize: 10),
-                                  ),
-                                ),
-                                HBox(4.h),
-                                Text(
-                                  items.city,
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(
-                                      fontSize: 10,
-                                      color: AppColors.grayDark),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        HBox(12.h),
-                        Row(
-                          mainAxisAlignment:
-                          MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(
-                              'Работ 0 | Отзывов 0',
-                              style: AppTextStyles.body14Secondary
-                                  .copyWith(fontSize: 10),
-                            ),
-                            Row(
-                              children: [
-                                Text(
-                                  '0',
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(fontSize: 10),
-                                ),
-                                WBox(4.w),
-                                Icon(
-                                  Icons.remove_red_eye_outlined,
-                                  size: 16.h,
-                                  color: AppColors.grayDark,
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
+                    HBox(12.h),
+                  ],
                 );
               });
+
         } else {
           return const Center(
             child: CircularProgressIndicator(),
@@ -362,28 +280,28 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
         }
       },
     )
-    : SizedBox();
+    : const SizedBox();
   }
 
 
   Widget getReview(){
-    return SafeArea(
-      child: FutureBuilder(
-          future: RestServices().getAllReviewByPublication(widget.username),
-          builder: (BuildContext context, AsyncSnapshot snapshotReview){
-            if (snapshotReview.hasData){
-              List<PublicationReview> reviewModel = snapshotReview.data;
-              return reviewModel.isNotEmpty?
-               Column(
+    return  FutureBuilder(
+        future: RestServices().getAllReviewByPublication(userName:
+        widget.username, categoryId: 0, rating: 0),
+        builder: (BuildContext context, AsyncSnapshot snapshotReview){
+          if (snapshotReview.hasData){
+            PublicationReview reviewModel = snapshotReview.data;
+            return reviewModel.comments.isNotEmpty?
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HBox(12.h),
                   Text(
-                    'Отзывы (${reviewModel.length })',
+                    'Отзывы (${reviewModel.commentsSize })',
                     style: AppTextStyles.body14Secondary,
                   ),
                   HBox(12.h),
-
                   Container(
                     margin: EdgeInsets.only(bottom: 12.h),
                     padding: EdgeInsets.all(12.h),
@@ -393,8 +311,8 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
                         BoxShadow(
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 0,
-                          blurRadius: 8,
-                          offset: Offset(0, 3.w), // changes position of shadow
+                          blurRadius: 4,
+                          offset: Offset(0, 1.w), // changes position of shadow
                         ),
                       ],
                       color: AppColors.white,
@@ -405,64 +323,79 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            reviewModel.first.rating ==5
+                            reviewModel.comments.first.rating==3
                                 ? Row(
                               children: [
                                 Text('Отлично', style: AppTextStyles.body14Secondary.copyWith(color: AppColors.primary),),
+                                WBox(6.w),
                                 Image.asset('assets/icons/emoji_best.png', width: 23.w, height: 23.h,)
                               ],
                             )
-                                : reviewModel.first.rating == 4
+                                : reviewModel.comments.first.rating == 2
                                 ?  Row(
                               children: [
                                 Text('Хорошо', style: AppTextStyles.body14Secondary.copyWith(color: AppColors.additionalGreenMedium),),
+                                WBox(6.w),
                                 Image.asset('assets/icons/emoji_good.png', width: 23.w, height: 23.h,)
                               ],
                             )
                                 : Row(
                               children: [
                                 Text('Плохо', style: AppTextStyles.body14Secondary.copyWith(color: AppColors.red),),
+                                WBox(6.w),
                                 Image.asset('assets/icons/emoji_angry.png', width: 23.w, height: 23.h,)
                               ],
                             ),
 
-                            Text(formatDate(reviewModel.first.createdDate ?? DateTime.now())),
+                            Text(formatDate(reviewModel.comments.first.createdDate), style: AppTextStyles.bodySecondaryTen,),
                           ],
                         ),
                         HBox(12.h),
                         Container(
                           padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 4.h),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          color: AppColors.grayCategory
-                        ),
-                          child: Text(reviewModel.first.category ?? ''),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: AppColors.grayCategory
+                          ),
+                          child: Text(reviewModel.comments.first.category),
                         ),
                         HBox(12.h),
-                        Text(reviewModel.first.feedback ?? '',
+                        Text(reviewModel.comments.first.feedback,
                           style:  AppTextStyles.bodySecondary.copyWith(color: AppColors.blackGreyText),),
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: reviewModel.first.files.map((file){
-                              return  Container(
-                                width: 94.w,
-                                height: 84.h,
-                                margin: EdgeInsets.only(right: 15.w, top: 12.h, bottom: 12.h),
-                                decoration: BoxDecoration(
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.grey.withOpacity(0.5),
-                                      spreadRadius: 0,
-                                      blurRadius: 8,
-                                      offset: Offset(0, 3.h), // changes position of shadow
+                            children: reviewModel.comments.first.files.map((file){
+                              return  GestureDetector(
+                                onTap: (){
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => FullScreenImage(
+                                          files: reviewModel.comments.first.files
+                                      ),
                                     ),
-                                  ],
-                                  image: DecorationImage(
-                                      image: NetworkImage(file.url), fit: BoxFit.fill),
-                                  color: AppColors.primary.withOpacity(0.6),
-                                  borderRadius: BorderRadius.circular(10),
-                                  border: Border.all(color: AppColors.primary),
+                                  );
+                                },
+                                child: Container(
+                                  width: 94.w,
+                                  height: 84.h,
+                                  margin: EdgeInsets.only(right: 15.w, top: 12.h, bottom: 12.h),
+                                  decoration: BoxDecoration(
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.grey.withOpacity(0.5),
+                                        spreadRadius: 0,
+                                        blurRadius: 4,
+                                        offset: Offset(0, 1.h), // changes position of shadow
+                                      ),
+                                    ],
+                                    image: DecorationImage(
+                                        image: NetworkImage(file.url), fit: BoxFit.fill),
+                                    color: AppColors.primary.withOpacity(0.6),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: AppColors.primary),
+                                  ),
                                 ),
                               );
                             }).toList(),
@@ -470,21 +403,21 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
                         ),
                         Align(
                           alignment: Alignment.bottomRight,
-                          child: Text(reviewModel.first.authorFullName ?? '',
-                            style:  AppTextStyles.bodySecondary.copyWith(color: AppColors.blackGreyText),),
+                          child: Text(reviewModel.comments.first.authorFullName,
+                              style:  AppTextStyles.bodySecondaryTen),
                         ),
                       ],
                     ),
                   ),
-                  reviewModel.length>=1
+                  reviewModel.commentsSize>=1
                       ? Padding(
-                         padding: EdgeInsets.only(bottom: 40.h),
-                        child: GestureDetector(
-                    onTap: (){
+                    padding: EdgeInsets.only(bottom: 40.h),
+                    child: GestureDetector(
+                      onTap: (){
                         Navigator.push(context,
                           MaterialPageRoute(builder: (_)=> ShowAllRateScreen(userName: widget.username),),);
-                    },
-                    child: Container(
+                      },
+                      child: Container(
                         width: MediaQuery.of(context).size.width,
                         padding: EdgeInsets.symmetric(vertical: 8.h),
                         decoration: BoxDecoration(
@@ -493,19 +426,19 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          'Смотреть все отзывы (${reviewModel.length})',
+                          'Смотреть все отзывы (${reviewModel.commentsSize})',
                           style: AppTextStyles.body14W500.copyWith(color: AppColors.primary),
                         ),
+                      ),
                     ),
-                  ),
-                      ) : const SizedBox()
+                  ) : const SizedBox()
                 ],
-              ) :SizedBox();
-            }else{
-              return const CircularProgressIndicator();
-            }
-          }),
-    );
+              ),
+            ) :SizedBox();
+          }else{
+            return const CircularProgressIndicator();
+          }
+        });
   }
 
   Widget myRequest(GetProfile profile){
@@ -544,132 +477,7 @@ class _ProfilePersonInfoState extends State<ProfilePersonInfo> {
 
                             ),),);
                       },
-                      child: Container(
-                        padding: EdgeInsets.all(12.w),
-                        margin: EdgeInsets.symmetric(vertical: 6.h),
-                        decoration: BoxDecoration(
-                          color: items.favourite
-                              ? AppColors.primaryYellowColor
-                              : AppColors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.5),
-                              spreadRadius: 0,
-                              blurRadius: 8,
-                              offset: Offset(
-                                  0, 3.w
-                              ),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Stack(
-                              children: [
-                                items.files.isNotEmpty ?
-                                Container(
-                                  height: 146.h,
-                                  width: MediaQuery.of(context).size.width,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.w),
-                                    image: DecorationImage(
-                                      image:
-                                      NetworkImage(items.files.first.url),
-                                      fit: BoxFit.fill,
-                                    ),
-                                  ),
-                                ) : Container(
-                                  height: 146.h,
-                                  width: MediaQuery.of(context).size.width,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(4.w),
-                                    color: AppColors.graySearch
-                                  ),
-                                  child: Column(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment.center,
-                                    children: const [
-                                      Icon(Icons.no_photography_outlined),
-                                      Text('Нет фото')
-                                    ],
-                                  ),
-                                ),
-                                items.files.isNotEmpty ?
-                                Positioned(
-                                  bottom: 4,
-                                  right: 4,
-                                  child: Container(
-                                    padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 16.w),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(4.w),
-                                      color: AppColors.black.withOpacity(0.5),
-                                    ),
-                                    child: Text("1/${items.files.length.toString()}",
-                                      style: AppTextStyles.captionPrimary.copyWith(color: AppColors.white),),
-                                  ),
-                                ) : SizedBox(),
-                              ],
-                            ),
-                            HBox(12.h),
-                            Text(
-                              items.title,
-                              style: AppTextStyles.body14Secondary
-                                  .copyWith(fontWeight: FontWeight.w600),
-                            ),
-                            HBox(6.h),
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Категория',
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(
-                                      color: AppColors.primaryGray),
-                                ),
-                                Text(items.category,
-                                    style: AppTextStyles.body14Secondary),
-                              ],
-                            ),
-                            HBox(6.h),
-                            Row(
-                              mainAxisAlignment:
-                              MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Стоимость работ',
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(
-                                      color: AppColors.primaryGray),
-                                ),
-                                items.isContractual?
-                                Text("договорная",
-                                    style: AppTextStyles.body14Secondary)
-                                :
-                                Text("${items.price.toInt().toString()} ₸",
-                                    style: AppTextStyles.body14Secondary),
-                              ],
-                            ),
-                            HBox(8.h),
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Описание',
-                                  style: AppTextStyles.body14Secondary
-                                      .copyWith(
-                                      color: AppColors.black, fontWeight: FontWeight.w600),
-                                ),
-                                Text(items.description,
-                                    style: AppTextStyles.body14Secondary,
-                                maxLines: 2,),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
+                      child: TaskCardView(items: items),
                     );
                   },),
             ],

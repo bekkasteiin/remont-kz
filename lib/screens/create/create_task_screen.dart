@@ -15,7 +15,9 @@ import 'package:remont_kz/model/file_discriptor/file_discriptor_model.dart';
 import 'package:remont_kz/model/task/create_task_model.dart';
 import 'package:remont_kz/utils/app_colors.dart';
 import 'package:remont_kz/utils/app_text_style.dart';
+import 'package:remont_kz/utils/box.dart';
 import 'package:remont_kz/utils/global_widgets/file_services.dart';
+import 'package:remont_kz/utils/global_widgets/no_user.dart';
 import 'package:remont_kz/utils/routes.dart';
 
 class CreateTaskScreen extends StatefulWidget {
@@ -47,9 +49,6 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   @override
   void initState() {
-    _scrollController.addListener(() {
-      FocusScope.of(context).requestFocus(FocusNode());
-    });
     super.initState();
   }
 
@@ -57,6 +56,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   Widget build(BuildContext context) {
     final tokenStore = getIt.get<TokenStoreService>();
     return Scaffold(
+      resizeToAvoidBottomInset: false,
       backgroundColor: AppColors.white,
       appBar: AppBar(
         automaticallyImplyLeading: false,
@@ -98,9 +98,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   BoxShadow(
                                     color: Colors.grey.withOpacity(0.5),
                                     spreadRadius: 0,
-                                    blurRadius: 8,
+                                    blurRadius: 4,
                                     offset: Offset(
-                                        0, 3.w), // changes position of shadow
+                                        0, 1.w), // changes position of shadow
                                   ),
                                 ],
                                 color: AppColors.white),
@@ -119,7 +119,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   width: 250,
                                   child: Text(
                                     categories?.name ?? 'Категория',
-                                    style: AppTextStyles.body14Secondary,
+                                    style: AppTextStyles.body14W500,
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -151,9 +151,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   BoxShadow(
                                     color: Colors.grey.withOpacity(0.5),
                                     spreadRadius: 0,
-                                    blurRadius: 8,
+                                    blurRadius: 4,
                                     offset: Offset(
-                                        0, 3.w), // changes position of shadow
+                                        0, 1.w), // changes position of shadow
                                   ),
                                 ],
                                 color: AppColors.white),
@@ -168,7 +168,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                 ),
                                 Text(
                                   cities?.name ?? 'Город',
-                                  style: AppTextStyles.body14Secondary,
+                                  style: AppTextStyles.body14W500,
                                 ),
                                 Expanded(
                                   child: Align(
@@ -197,9 +197,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   BoxShadow(
                                     color: Colors.grey.withOpacity(0.5),
                                     spreadRadius: 0,
-                                    blurRadius: 8,
+                                    blurRadius: 4,
                                     offset: Offset(
-                                        0, 3.w), // changes position of shadow
+                                        0, 1.w), // changes position of shadow
                                   ),
                                 ],
                                 color: AppColors.white),
@@ -218,6 +218,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                   child: TextField(
                                     maxLines: 1,
                                     controller: address,
+                                    style: AppTextStyles.body14W500,
                                     onChanged: (val) {},
                                     decoration: InputDecoration.collapsed(
                                       hintText: 'Адрес работ',
@@ -236,9 +237,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Заголовок',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.blackGreyText,
-                                fontWeight: FontWeight.w600),
+                            style: AppTextStyles.body14W500,
                           ),
                         ),
                         SizedBox(
@@ -253,9 +252,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.5),
                                 spreadRadius: 0,
-                                blurRadius: 8,
+                                blurRadius: 4,
                                 offset:
-                                    Offset(0, 3.w), // changes position of shadow
+                                    Offset(0, 1.w), // changes position of shadow
                               ),
                             ],
                           ),
@@ -295,9 +294,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Описание работ',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.blackGreyText,
-                                fontWeight: FontWeight.w600),
+                            style: AppTextStyles.body14Secondary,
                           ),
                         ),
                         SizedBox(
@@ -312,9 +309,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.5),
                                 spreadRadius: 0,
-                                blurRadius: 8,
+                                blurRadius: 4,
                                 offset:
-                                    Offset(0, 3), // changes position of shadow
+                                    Offset(0, 1.w), // changes position of shadow
                               ),
                             ],
                           ),
@@ -327,8 +324,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                 if (value!.isEmpty) {
                                   return ("Описание не должен быть пустым");
                                 }
-                                if (value.length < 70) {
-                                  return "Описание должен содержать минимум 70 символов";
+                                if (value.length < 50) {
+                                  return "Описание должен содержать минимум 50 символов";
                                 }
 
                                 return null;
@@ -355,10 +352,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Цена, тг',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.primaryGray,
-                                fontSize: 12.w,
-                                fontWeight: FontWeight.w500),
+                            style: AppTextStyles.body14Secondary.copyWith(color: AppColors.primaryGray),
                           ),
                         ),
                         GestureDetector(
@@ -371,9 +365,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           },
                           child: Container(
                             margin: EdgeInsets.symmetric(
-                                vertical: 8.h, horizontal: 16.w),
+                                vertical: 8.h, horizontal: 12.w),
                             padding: EdgeInsets.symmetric(
-                                horizontal: 16.w, vertical: 8.h),
+                                horizontal: 7.w, vertical: 5.h),
                             decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(4.w),
                                 border: Border.all(color: AppColors.primary),
@@ -382,10 +376,10 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                     : AppColors.white),
                             child: Text(
                               'договорная',
-                              style: TextStyle(
+                              style: AppTextStyles.body14Secondary.copyWith(
                                   color: isMoney
                                       ? AppColors.white
-                                      : AppColors.primary),
+                                      : AppColors.blackGreyText),
                             ),
                           ),
                         ),
@@ -393,25 +387,24 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Или укажите свою цену',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.primaryGray,
-                                fontWeight: FontWeight.w500),
+                            style: AppTextStyles.bodySecondaryTen,
                           ),
                         ),
+                        HBox(12.h),
                         Container(
                           margin: EdgeInsets.symmetric(horizontal: 12.w),
                           padding: EdgeInsets.symmetric(
-                              vertical: 16.h, horizontal: 16.w),
+                              vertical: 12.h, horizontal: 12.w),
                           decoration: BoxDecoration(
                             color: AppColors.white,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(4),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey.withOpacity(0.5),
                                 spreadRadius: 0,
-                                blurRadius: 8,
+                                blurRadius: 4,
                                 offset:
-                                    Offset(0, 3.w),
+                                    Offset(0, 1.w),
                               ),
                             ],
                           ),
@@ -469,8 +462,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Время работ',
-                            style: AppTextStyles.body14Secondary
-                                .copyWith(fontWeight: FontWeight.w600),
+                            style: AppTextStyles.body14Secondary,
                           ),
                         ),
                         SizedBox(
@@ -479,7 +471,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                         Padding(
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: SizedBox(
-                            height: 40.h,
+                            height: 30.h,
                             width: MediaQuery.of(context).size.width,
                             child: ListView.builder(
                                 scrollDirection: Axis.horizontal,
@@ -491,21 +483,22 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                       setState(() {});
                                     },
                                     child: Container(
-                                      padding: EdgeInsets.all(8.w),
-                                      margin: EdgeInsets.only(right: 4.w),
+                                      alignment: Alignment.center,
+                                      padding: EdgeInsets.symmetric(vertical: 5.h, horizontal: 7.w),
+                                      margin: EdgeInsets.only(right: 10.w),
                                       decoration: BoxDecoration(
                                         color: timesWork != null &&
                                                 timesWork == times[i]
                                             ? AppColors.primary
                                             : AppColors.white,
-                                        borderRadius: BorderRadius.circular(10),
+                                        borderRadius: BorderRadius.circular(4),
                                         boxShadow: [
                                           BoxShadow(
                                             color: Colors.grey.withOpacity(0.5),
                                             spreadRadius: 0,
-                                            blurRadius: 8,
+                                            blurRadius: 2,
                                             offset: Offset(0,
-                                                3), // changes position of shadow
+                                                1.w), // changes position of shadow
                                           ),
                                         ],
                                         border:
@@ -532,9 +525,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                           padding: EdgeInsets.symmetric(horizontal: 12.w),
                           child: Text(
                             'Добавьте фото',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.blackGreyText,
-                                fontWeight: FontWeight.w600),
+                            style: AppTextStyles.body14Secondary,
                           ),
                         ),
                         SingleChildScrollView(
@@ -553,9 +544,9 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                                       BoxShadow(
                                         color: Colors.grey.withOpacity(0.5),
                                         spreadRadius: 0,
-                                        blurRadius: 8,
+                                        blurRadius: 4,
                                         offset: Offset(
-                                            0, 3.w), // changes position of shadow
+                                            0, 1.w), // changes position of shadow
                                       ),
                                     ],
                                     color: AppColors.primary.withOpacity(0.6),
@@ -575,138 +566,120 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                               ),
                               Row(
                                 children: files.map((e) {
-                                  return Container(
-                                    width: 167.w,
-                                    height: 108.h,
-                                    margin: EdgeInsets.all(8.w),
-                                    padding: EdgeInsets.all(22.w),
-                                    decoration: BoxDecoration(
-                                      image: DecorationImage(
-                                          image: NetworkImage(e.url),
-                                          fit: BoxFit.fill),
-                                      color: AppColors.primary.withOpacity(0.6),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.grey.withOpacity(0.5),
-                                          spreadRadius: 0,
-                                          blurRadius: 8,
-                                          offset: Offset(
-                                              0, 3), // changes position of shadow
+                                  return Stack(
+                                    children: [
+                                      Container(
+                                        width: 167.w,
+                                        height: 108.h,
+                                        margin: EdgeInsets.all(8.w),
+                                        padding: EdgeInsets.all(22.w),
+                                        decoration: BoxDecoration(
+                                          image: DecorationImage(
+                                              image: NetworkImage(e.url),
+                                              fit: BoxFit.fill),
+                                          color: AppColors.primary.withOpacity(0.6),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.grey.withOpacity(0.5),
+                                              spreadRadius: 0,
+                                              blurRadius: 4,
+                                              offset: Offset(
+                                                  0, 1.h), // changes position of shadow
+                                            ),
+                                          ],
+                                          borderRadius: BorderRadius.circular(10),
+                                          border:
+                                              Border.all(color: AppColors.primary),
                                         ),
-                                      ],
-                                      borderRadius: BorderRadius.circular(10),
-                                      border:
-                                          Border.all(color: AppColors.primary),
-                                    ),
+                                      ),
+                                      Positioned(
+                                        top: 10,
+                                        right: 10,
+                                        child: GestureDetector(
+                                          onTap: () {
+                                            files.removeWhere((element) => element.url == e.url);
+                                            setState(() {
+
+                                            });
+                                          },
+                                          child: const Icon(
+                                            Icons.delete,
+                                            color: AppColors.red,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   );
                                 }).toList(),
                               ),
                             ],
                           ),
                         ),
-                        Container(
-                          height: 50,
-                        )
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          child: GestureDetector(
+                            onTap: () async {
+                              if (_formKey.currentState!.validate()) {
+
+                                if(categories==null){
+                                  errorText(title: 'Выберите категорию', context: context);
+                                }else if(cities == null){
+                                  errorText(title: 'Выберите город', context: context);
+                                }else if(address.text == ''){
+                                  errorText(title: 'Заполните адрес работ', context: context);
+                                }else if(timesWork == null){
+                                  errorText(title: 'Выберите время работ', context: context);
+                                }else{
+                                  var send = await RestServices().createNewTask(
+                                    TaskPublication(
+                                        files: files,
+                                        address: address.text.replaceAll(RegExp(r'\s+'), ' '),
+                                        title: title.text.replaceAll(RegExp(r'\s+'), ' '),
+                                        price: isMoney ? null : int.parse(priceText.text),
+                                        city: cities,
+                                        category: categories,
+                                        status: "ACTIVATED",
+                                        isContractual: isMoney ? true : null,
+                                        id: null,
+                                        description: description.text.replaceAll(RegExp(r'\s+'), ' '),
+                                        workTime: timesWork),
+                                  );
+                                  if(send == 200){
+                                    await Navigator.pushNamedAndRemoveUntil(
+                                        context, AppRoutes.mainNav, (route) => true);
+                                  }else{
+                                    print('sdf');
+                                  }
+
+
+                                }
+
+                              } else {}
+                            },
+                            child: Container(
+                              height: 44.h,
+                              width: MediaQuery.of(context).size.width,
+                              padding: EdgeInsets.all(12.w),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(4.w),
+                                  color: AppColors.primary),
+                              child: Text(
+                                'Опубликовать задание',
+                                style: AppTextStyles.body14Secondary
+                                    .copyWith(color: AppColors.white, fontSize: 14.sp),
+                              ),
+                            ),
+                          ),
+                        ),
+                        HBox(12.h),
                       ],
                     ),
                   ),
                 ),
               ),
             )
-          : Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 200.w,
-                      child: const Text(
-                        'Войдите, чтобы создать задания, ответить на сообщения или найти того, кто вам нужен',
-                        style: TextStyle(color: AppColors.white),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: 12.w, vertical: 40.w),
-                      child: GestureDetector(
-                        onTap: () async {
-                          await Navigator.pushNamedAndRemoveUntil(
-                              context, AppRoutes.sign, (route) => false);
-                        },
-                        child: Container(
-                          width: MediaQuery.of(context).size.width,
-                          padding: EdgeInsets.all(12.w),
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4.w),
-                              color: AppColors.white),
-                          child: Text(
-                            'Войти или создать профиль',
-                            style: AppTextStyles.body14Secondary.copyWith(
-                                color: AppColors.primary, fontSize: 14.sp),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      floatingActionButton: tokenStore.accessToken != null
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              child: GestureDetector(
-                onTap: () async {
-                  if (_formKey.currentState!.validate()) {
-
-                    if(categories==null){
-                      errorText(title: 'Выберите категорию', context: context);
-                    }if(cities == null){
-                    errorText(title: 'Выберите город', context: context);
-                  }if(address.text == ''){
-                    errorText(title: 'Заполните адрес работ', context: context);
-                  }if(timesWork == null){
-                      errorText(title: 'Выберите время работ', context: context);
-                    }
-                    RestServices().createNewTask(
-                      TaskPublication(
-                          files: files,
-                          address: address.text.replaceAll(RegExp(r'\s+'), ' '),
-                          title: title.text.replaceAll(RegExp(r'\s+'), ' '),
-                          price: isMoney ? null : int.parse(priceText.text),
-                          city: cities,
-                          category: categories,
-                          status: "ACTIVATED",
-                          isContractual: isMoney ? true : null,
-                          id: null,
-                          description: description.text.replaceAll(RegExp(r'\s+'), ' '),
-                          workTime: timesWork),
-                    );
-
-                    await Navigator.pushNamedAndRemoveUntil(
-                        context, AppRoutes.mainNav, (route) => true);
-                  } else {}
-                },
-                child: Container(
-                  height: 44.h,
-                  width: MediaQuery.of(context).size.width,
-                  padding: EdgeInsets.all(12.w),
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4.w),
-                      color: AppColors.primary),
-                  child: Text(
-                    'Опубликовать задание',
-                    style: AppTextStyles.body14Secondary
-                        .copyWith(color: AppColors.white, fontSize: 14.sp),
-                  ),
-                ),
-              ),
-            )
-          : const SizedBox(),
+          :  const NoAuthPageView(),
     );
   }
 
@@ -725,6 +698,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   getCity() {
     showDialog(
+      barrierColor: AppColors.transparent,
       context: context,
       builder: (_) => Scaffold(
         backgroundColor: AppColors.white,
@@ -797,6 +771,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
 
   getCategory() {
     showDialog(
+        barrierColor: AppColors.transparent,
         context: context,
         builder: (_) => Scaffold(
               backgroundColor: AppColors.white,
